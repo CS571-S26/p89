@@ -21,7 +21,7 @@ export default function PlaylistPage() {
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen px-4 py-12 gap-8">
+    <div className="flex flex-col items-center px-4 py-12 gap-8">
       <h2 className="text-2xl font-semibold">Your Playlists</h2>
       <ul className="w-full max-w-sm flex flex-col gap-3">
         {STUB_PLAYLISTS.map((playlist) => (

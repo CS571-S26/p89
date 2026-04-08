@@ -48,7 +48,7 @@ export default function SwipePage() {
   const actionLabel = mode === 'add' ? 'Added' : 'Kept';
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-8 px-4">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-57px)] gap-8 px-4">
       <div className="flex items-center justify-between w-full max-w-sm">
         <button
           className="text-sm text-gray-500 hover:text-black transition-colors"

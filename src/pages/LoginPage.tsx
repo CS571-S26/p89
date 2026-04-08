@@ -8,7 +8,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-6">
+    <div className="flex flex-col items-center justify-center flex-1 gap-6 min-h-[calc(100vh-57px)]">
       <h1 className="text-4xl font-bold tracking-tight">Audify</h1>
       <p className="text-gray-500 text-sm">Manage your playlists, one swipe at a time.</p>
       <button

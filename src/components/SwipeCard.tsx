@@ -3,7 +3,8 @@
  *
  * Drag right past SWIPE_THRESHOLD (or flick faster than VELOCITY_THRESHOLD)
  * to keep; left to discard. Colored overlays provide directional feedback
- * during the drag. On commit the card exits horizontally with a fast tween.
+ * during the drag. On commit the card tosses a short distance in the swipe
+ * direction while fading out, disappearing before reaching the viewport edge.
  * On a sub-threshold release it springs back to center.
  */
 import { motion, useMotionValue, useTransform, animate, type PanInfo } from 'framer-motion';
@@ -18,8 +19,11 @@ const VELOCITY_THRESHOLD = 500;
 /** Maximum opacity of the colored overlay at full swipe distance. */
 const MAX_OVERLAY_OPACITY = 0.55;
 
-/** Pixels off-screen the card travels to before onSwipe fires. */
-const EXIT_X = window.innerWidth + 300;
+/**
+ * How far (px) the card travels toward the edge before it fully fades out.
+ * Kept short so the card vanishes well before reaching the screen edge.
+ */
+const EXIT_TRAVEL = 160;
 
 type SwipeCardProps = {
   song: Song;
@@ -29,6 +33,7 @@ type SwipeCardProps = {
 export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
+  const opacity = useMotionValue(1);
 
   /** Rotation tracks x so the card tilts as it's dragged. */
   const rotate = useTransform(x, [-300, 300], [-20, 20]);
@@ -39,16 +44,14 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
   const discardSymbolOpacity = useTransform(x, [-SWIPE_THRESHOLD, 0], [1, 0]);
 
   /**
-   * Exits the card in the given direction using a short tween so it leaves
-   * the screen cleanly without spring oscillation.
+   * Tosses the card a short distance in the swipe direction while fading it
+   * out, so it disappears before reaching the viewport edge.
    */
   function exitCard(direction: SwipeDirection) {
-    const targetX = direction === 'keep' ? EXIT_X : -EXIT_X;
-    animate(x, targetX, {
-      type: 'tween',
-      duration: 0.3,
-      ease: 'easeIn',
-    }).then(() => onSwipe(direction));
+    const sign = direction === 'keep' ? 1 : -1;
+    const targetX = x.get() + sign * EXIT_TRAVEL;
+    animate(opacity, 0, { duration: 0.2, ease: 'easeOut' }).then(() => onSwipe(direction));
+    animate(x, targetX, { duration: 0.2, ease: 'easeOut' });
   }
 
   function handleDragEnd(_: unknown, info: PanInfo) {
@@ -76,7 +79,7 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
     >
       <motion.div
         className="absolute inset-0 rounded-3xl shadow-xl flex flex-col overflow-hidden cursor-grab active:cursor-grabbing"
-        style={{ x, y, rotate }}
+        style={{ x, y, rotate, opacity }}
         drag="x"
         dragMomentum={false}
         dragElastic={0.15}
