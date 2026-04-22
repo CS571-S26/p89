@@ -60,6 +60,14 @@ export function configureMusicKit(): Promise<void> {
 }
 
 /**
+ * Returns true if the user has already authorized the app with Apple Music.
+ */
+export async function isAuthorized(): Promise<boolean> {
+  await configureMusicKit();
+  return getInstance().isAuthorized;
+}
+
+/**
  * Prompts the user to sign in with Apple Music.
  * Returns the user token string on success.
  */

@@ -16,6 +16,7 @@ vi.mock('react-router', async (importOriginal) => {
 
 vi.mock('../services/musicKit', () => ({
   authorize: vi.fn().mockResolvedValue('mock-user-token'),
+  isAuthorized: vi.fn().mockResolvedValue(false),
 }));
 
 describe('LoginPage', () => {

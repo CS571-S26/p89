@@ -1,21 +1,27 @@
 /**
  * LoginPage - entry point of the app.
  * Offers Apple Music sign-in or a demo mode that uses stub data.
+ * If the user is already authorized, the button reads "Continue" instead.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { authorize } from '../services/musicKit';
+import { authorize, isAuthorized } from '../services/musicKit';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    isAuthorized().then(setAuthorized).catch(() => {});
+  }, []);
 
   async function handleSignIn() {
     setLoading(true);
     setError(null);
     try {
-      await authorize();
+      if (!authorized) await authorize();
       navigate('/playlists');
     } catch {
       setError('Sign in failed. Please try again.');
@@ -43,11 +49,13 @@ export default function LoginPage() {
           onClick={handleSignIn}
           disabled={loading}
         >
-          {loading ? 'Signing in...' : 'Sign in with Apple Music'}
+          {loading ? 'Signing in...' : authorized ? 'Continue' : 'Sign in with Apple Music'}
         </button>
-        <p className="text-xs text-gray-400">
-          Requires an active Apple Music subscription.
-        </p>
+        {!authorized && (
+          <p className="text-xs text-gray-400">
+            Requires an active Apple Music subscription.
+          </p>
+        )}
       </div>
 
       <button
