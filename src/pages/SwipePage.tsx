@@ -68,7 +68,9 @@ export default function SwipePage() {
     setSaving(true);
     addTracksToPlaylist(playlistId, kept)
       .catch(() =>
-        setSaveError('Could not add songs to Apple Music. Changes were not saved.')
+        setSaveError(
+          'Could not add songs to Apple Music. Changes were not saved.'
+        )
       )
       .finally(() => setSaving(false));
   }, [queue.length, loading, error]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -211,7 +213,9 @@ function DoneState({
         <p className="text-gray-500 text-sm mt-1">
           Added {kept.length} &middot; Skipped {discarded.length}
         </p>
-        {saving && <p className="text-gray-400 text-sm mt-1">Saving changes...</p>}
+        {saving && (
+          <p className="text-gray-400 text-sm mt-1">Saving changes...</p>
+        )}
         {saveError && (
           <p className="text-red-500 text-sm mt-1 max-w-xs">{saveError}</p>
         )}
@@ -223,7 +227,9 @@ function DoneState({
             Added
           </p>
           <div className="flex flex-col gap-3">
-            {kept.map(song => <SongRow key={song.id} song={song} />)}
+            {kept.map(song => (
+              <SongRow key={song.id} song={song} />
+            ))}
           </div>
         </div>
       )}
@@ -234,7 +240,9 @@ function DoneState({
             Skipped
           </p>
           <div className="flex flex-col gap-3 opacity-50">
-            {discarded.map(song => <SongRow key={song.id} song={song} />)}
+            {discarded.map(song => (
+              <SongRow key={song.id} song={song} />
+            ))}
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { configureMusicKit } from './services/musicKit'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.tsx';
+import { configureMusicKit } from './services/musicKit';
 
 /** Start loading MusicKit JS early so it is ready before the user signs in. */
 configureMusicKit().catch(() => {
@@ -12,5 +12,5 @@ configureMusicKit().catch(() => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
-  </StrictMode>,
-)
+  </StrictMode>
+);

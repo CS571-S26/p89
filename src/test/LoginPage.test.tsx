@@ -9,7 +9,7 @@ import LoginPage from '../pages/LoginPage';
 
 const mockNavigate = vi.fn();
 
-vi.mock('react-router', async (importOriginal) => {
+vi.mock('react-router', async importOriginal => {
   const actual = await importOriginal<typeof import('react-router')>();
   return { ...actual, useNavigate: () => mockNavigate };
 });
@@ -23,13 +23,21 @@ describe('LoginPage', () => {
   beforeEach(() => mockNavigate.mockClear());
 
   it('renders the app name', () => {
-    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    );
     expect(screen.getByText('Audify')).toBeInTheDocument();
   });
 
   it('navigates to /playlists after successful sign-in', async () => {
     const user = userEvent.setup();
-    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    );
     await user.click(screen.getByRole('button', { name: /sign in/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/playlists');
   });
@@ -39,7 +47,11 @@ describe('LoginPage', () => {
     vi.mocked(authorize).mockRejectedValueOnce(new Error('auth failed'));
 
     const user = userEvent.setup();
-    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    );
     await user.click(screen.getByRole('button', { name: /sign in/i }));
     expect(screen.getByText(/sign in failed/i)).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();

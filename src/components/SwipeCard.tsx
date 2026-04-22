@@ -246,7 +246,9 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
             <span className="font-semibold text-gray-900 truncate">
               {song.title}
             </span>
-            <span className="text-sm text-gray-500 truncate">{song.artist}</span>
+            <span className="text-sm text-gray-500 truncate">
+              {song.artist}
+            </span>
             <span className="text-xs text-gray-400 truncate">{song.album}</span>
           </div>
 
@@ -282,12 +284,20 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-black text-white"
                 >
                   {playing ? (
-                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-4 h-4"
+                      fill="currentColor"
+                    >
                       <rect x="6" y="5" width="4" height="14" rx="1" />
                       <rect x="14" y="5" width="4" height="14" rx="1" />
                     </svg>
                   ) : (
-                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-4 h-4"
+                      fill="currentColor"
+                    >
                       <path d="M8 5.14v14l11-7-11-7z" />
                     </svg>
                   )}

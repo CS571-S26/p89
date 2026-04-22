@@ -27,7 +27,10 @@ describe('SwipeCard', () => {
   });
 
   it('renders an img when artworkUrl is provided', () => {
-    const song: Song = { ...STUB_SONG, artworkUrl: 'https://example.com/art.jpg' };
+    const song: Song = {
+      ...STUB_SONG,
+      artworkUrl: 'https://example.com/art.jpg',
+    };
     render(<SwipeCard song={song} onSwipe={vi.fn()} />);
     expect(screen.getByRole('img', { name: /artwork/i })).toBeInTheDocument();
   });

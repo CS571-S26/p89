@@ -76,7 +76,12 @@ export default function PlaylistPage() {
 
   return (
     <div className="flex flex-col items-center px-4 py-12 gap-8">
-      <h2 className="text-2xl font-semibold">Your Playlists</h2>
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold">Your Playlists</h2>
+        <p className="text-gray-500 text-sm mt-1">
+          Choose a playlist to add songs
+        </p>
+      </div>
 
       {loading && <p className="text-gray-400 text-sm">Loading playlists...</p>}
       {error && <p className="text-red-500 text-sm">{error}</p>}

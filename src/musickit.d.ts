@@ -89,7 +89,9 @@ declare namespace MusicKit {
 
 interface Window {
   MusicKit: {
-    configure(config: MusicKit.Configuration): Promise<MusicKit.MusicKitInstance>;
+    configure(
+      config: MusicKit.Configuration
+    ): Promise<MusicKit.MusicKitInstance>;
     getInstance(): MusicKit.MusicKitInstance;
   };
 }

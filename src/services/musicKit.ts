@@ -86,7 +86,10 @@ export async function authorize(): Promise<string> {
  * Makes an authenticated POST request to the Apple Music API.
  * Uses the cached developer token and user token as auth headers.
  */
-async function authenticatedPost(path: string, body: unknown): Promise<Response> {
+async function authenticatedPost(
+  path: string,
+  body: unknown
+): Promise<Response> {
   const devToken = import.meta.env.VITE_APPLE_DEV_TOKEN as string;
   const token = userToken ?? getInstance().musicUserToken;
   const url = `https://api.music.apple.com${path}`;
@@ -206,12 +209,16 @@ export async function fetchSongSuggestions(): Promise<Song[]> {
   const music = getInstance();
 
   const [storefrontRes, recsRes] = await Promise.all([
-    music.api.music('/v1/me/storefront').then(
-      r => r.data as MusicKit.PagedResponse<MusicKit.StorefrontResource[]>
-    ),
-    music.api.music('/v1/me/recommendations?limit=10').then(
-      r => r.data as MusicKit.PagedResponse<MusicKit.RecommendationResource[]>
-    ),
+    music.api
+      .music('/v1/me/storefront')
+      .then(
+        r => r.data as MusicKit.PagedResponse<MusicKit.StorefrontResource[]>
+      ),
+    music.api
+      .music('/v1/me/recommendations?limit=10')
+      .then(
+        r => r.data as MusicKit.PagedResponse<MusicKit.RecommendationResource[]>
+      ),
   ]);
 
   const storefront = storefrontRes.data[0]?.id ?? 'us';
@@ -232,8 +239,7 @@ export async function fetchSongSuggestions(): Promise<Song[]> {
       music.api
         .music(`/v1/catalog/${storefront}/albums/${albumId}/tracks?limit=5`)
         .then(
-          r =>
-            (r.data as MusicKit.PagedResponse<CatalogSongResource[]>).data
+          r => (r.data as MusicKit.PagedResponse<CatalogSongResource[]>).data
         )
         .catch(() => [] as CatalogSongResource[])
     )
@@ -241,11 +247,14 @@ export async function fetchSongSuggestions(): Promise<Song[]> {
 
   // Flatten and deduplicate by ID
   const seen = new Set<string>();
-  return trackGroups.flat().filter(track => {
-    if (seen.has(track.id)) return false;
-    seen.add(track.id);
-    return true;
-  }).map(mapCatalogSongResource);
+  return trackGroups
+    .flat()
+    .filter(track => {
+      if (seen.has(track.id)) return false;
+      seen.add(track.id);
+      return true;
+    })
+    .map(mapCatalogSongResource);
 }
 
 /**
@@ -257,7 +266,9 @@ export async function createPlaylist(name: string): Promise<Playlist> {
   const response = await authenticatedPost('/v1/me/library/playlists', {
     attributes: { name },
   });
-  const envelope = (await response.json()) as MusicKit.PagedResponse<PlaylistResource[]>;
+  const envelope = (await response.json()) as MusicKit.PagedResponse<
+    PlaylistResource[]
+  >;
   const resource = envelope.data[0];
   return {
     id: resource.id,

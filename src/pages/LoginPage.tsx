@@ -14,7 +14,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    isAuthorized().then(setAuthorized).catch(() => {});
+    isAuthorized()
+      .then(setAuthorized)
+      .catch(() => {});
   }, []);
 
   async function handleSignIn() {
@@ -49,7 +51,11 @@ export default function LoginPage() {
           onClick={handleSignIn}
           disabled={loading}
         >
-          {loading ? 'Signing in...' : authorized ? 'Continue' : 'Sign in with Apple Music'}
+          {loading
+            ? 'Signing in...'
+            : authorized
+              ? 'Continue'
+              : 'Sign in with Apple Music'}
         </button>
         {!authorized && (
           <p className="text-xs text-gray-400">

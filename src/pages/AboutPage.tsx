@@ -21,8 +21,8 @@ export default function AboutPage() {
         <div className="px-4 py-4 border border-gray-200 rounded-2xl">
           <h3 className="font-medium mb-1">Swipe to add</h3>
           <p className="text-sm text-gray-500">
-            Swipe right on a song to add it to your playlist. Swipe left to
-            skip it. Press Done at any time to save your choices and stop early.
+            Swipe right on a song to add it to your playlist. Swipe left to skip
+            it. Press Done at any time to save your choices and stop early.
           </p>
         </div>
         <div className="px-4 py-4 border border-gray-200 rounded-2xl">
