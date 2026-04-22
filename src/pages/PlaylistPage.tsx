@@ -128,7 +128,7 @@ export default function PlaylistPage() {
               </button>
             </div>
           </form>
-        ) : (
+        ) : !demo ? (
           <button
             className="w-full flex items-center gap-3 px-4 py-4 border border-dashed border-gray-300 rounded-2xl hover:border-black text-gray-500 hover:text-black transition-colors"
             onClick={() => setShowForm(true)}
@@ -136,7 +136,7 @@ export default function PlaylistPage() {
             <span className="text-lg leading-none">+</span>
             <span className="text-sm font-medium">New playlist</span>
           </button>
-        )}
+        ) : null}
 
         {playlists.map(playlist => (
           <button

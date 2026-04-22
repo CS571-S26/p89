@@ -156,7 +156,8 @@ export default function SwipePage() {
             discarded={discarded}
             saving={saving}
             saveError={saveError}
-            onRestart={() => navigate('/playlists')}
+            demo={demo}
+            onRestart={() => demo ? navigate('/') : navigate('/playlists')}
           />
         )}
       </AnimatePresence>
@@ -176,6 +177,7 @@ type DoneStateProps = {
   discarded: Song[];
   saving: boolean;
   saveError: string | null;
+  demo: boolean;
   onRestart: () => void;
 };
 
@@ -204,6 +206,7 @@ function DoneState({
   discarded,
   saving,
   saveError,
+  demo,
   onRestart,
 }: DoneStateProps) {
   return (
@@ -252,7 +255,7 @@ function DoneState({
         onClick={onRestart}
         disabled={saving}
       >
-        Back to playlists
+        {demo ? 'Back to home' : 'Back to playlists'}
       </button>
     </div>
   );
