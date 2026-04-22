@@ -116,12 +116,16 @@ export default function SwipePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-57px)] gap-8 px-4">
       <div className="flex items-center justify-between w-full max-w-sm">
-        <button
-          className="text-sm text-gray-500 hover:text-black transition-colors"
-          onClick={() => navigate(-1)}
-        >
-          Cancel
-        </button>
+        {currentSong ? (
+          <button
+            className="text-sm text-gray-500 hover:text-black transition-colors"
+            onClick={() => navigate(-1)}
+          >
+            Cancel
+          </button>
+        ) : (
+          <span />
+        )}
         {currentSong && (
           <span className="text-sm text-gray-400">{queue.length} left</span>
         )}
@@ -146,8 +150,8 @@ export default function SwipePage() {
           />
         ) : (
           <DoneState
-            addedCount={kept.length}
-            skippedCount={discarded.length}
+            kept={kept}
+            discarded={discarded}
             saving={saving}
             saveError={saveError}
             onRestart={() => navigate('/playlists')}
@@ -166,32 +170,77 @@ export default function SwipePage() {
 }
 
 type DoneStateProps = {
-  addedCount: number;
-  skippedCount: number;
+  kept: Song[];
+  discarded: Song[];
   saving: boolean;
   saveError: string | null;
   onRestart: () => void;
 };
 
+function SongRow({ song }: { song: Song }) {
+  return (
+    <div className="flex items-center gap-3 text-left">
+      {song.artworkUrl ? (
+        <img
+          src={song.artworkUrl}
+          alt={song.album}
+          className="w-10 h-10 rounded object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className="w-10 h-10 rounded bg-gray-100 flex-shrink-0" />
+      )}
+      <div className="min-w-0">
+        <p className="text-sm font-medium truncate">{song.title}</p>
+        <p className="text-xs text-gray-400 truncate">{song.artist}</p>
+      </div>
+    </div>
+  );
+}
+
 function DoneState({
-  addedCount,
-  skippedCount,
+  kept,
+  discarded,
   saving,
   saveError,
   onRestart,
 }: DoneStateProps) {
   return (
-    <div className="flex flex-col items-center gap-4 text-center">
-      <h2 className="text-2xl font-semibold">All done</h2>
-      <p className="text-gray-500 text-sm">
-        Added {addedCount} &middot; Skipped {skippedCount}
-      </p>
-      {saving && <p className="text-gray-400 text-sm">Saving changes...</p>}
-      {saveError && (
-        <p className="text-red-500 text-sm max-w-xs">{saveError}</p>
+    <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold">All done</h2>
+        <p className="text-gray-500 text-sm mt-1">
+          Added {kept.length} &middot; Skipped {discarded.length}
+        </p>
+        {saving && <p className="text-gray-400 text-sm mt-1">Saving changes...</p>}
+        {saveError && (
+          <p className="text-red-500 text-sm mt-1 max-w-xs">{saveError}</p>
+        )}
+      </div>
+
+      {kept.length > 0 && (
+        <div className="w-full">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+            Added
+          </p>
+          <div className="flex flex-col gap-3">
+            {kept.map(song => <SongRow key={song.id} song={song} />)}
+          </div>
+        </div>
       )}
+
+      {discarded.length > 0 && (
+        <div className="w-full">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+            Skipped
+          </p>
+          <div className="flex flex-col gap-3 opacity-50">
+            {discarded.map(song => <SongRow key={song.id} song={song} />)}
+          </div>
+        </div>
+      )}
+
       <button
-        className="mt-4 px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+        className="mt-2 px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
         onClick={onRestart}
         disabled={saving}
       >
