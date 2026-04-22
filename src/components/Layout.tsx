@@ -1,5 +1,5 @@
 /**
- * Layout — wraps all pages with the primary navigation bar.
+ * Layout - wraps all pages with the primary navigation bar.
  */
 import { Outlet } from 'react-router';
 import NavBar from './NavBar';

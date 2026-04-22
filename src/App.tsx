@@ -1,5 +1,5 @@
 /**
- * App — root component. Defines client-side routes for the full swipe flow.
+ * App - root component. Defines client-side routes for the full swipe flow.
  *
  * Routes:
  *   /          - Login
@@ -30,7 +30,7 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: '/p89' },
+  { basename: '/p89' }
 );
 
 export default function App() {

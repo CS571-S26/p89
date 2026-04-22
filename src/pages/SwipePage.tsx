@@ -1,22 +1,30 @@
 /**
- * SwipePage — the main interactive screen.
+ * SwipePage - the main interactive screen.
  *
  * Fetches tracks for the selected playlist and renders a stack of SwipeCards.
  * Swipe right to keep a song, left to discard it.
  *
- * In remove mode, discarded songs are deleted from the playlist when the queue
- * is exhausted.
+ * The header shows how many songs remain and provides a "Done" button to commit
+ * changes early, and a "Cancel" button to exit without saving.
+ *
+ * In remove mode, discarded songs are deleted from the playlist once the
+ * session ends (either by exhausting the queue or pressing Done).
  */
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router';
 import { AnimatePresence } from 'framer-motion';
 import SwipeCard from '../components/SwipeCard';
 import type { Song, SwipeMode, SwipeDirection } from '../types';
-import { fetchPlaylistTracks, removeTracksFromPlaylist } from '../services/musicKit';
+import {
+  fetchPlaylistTracks,
+  removeTracksFromPlaylist,
+} from '../services/musicKit';
+import { STUB_SONGS } from '../services/stubs';
 
 type LocationState = {
   mode: SwipeMode;
   playlistId: string;
+  demo?: boolean;
 };
 
 export default function SwipePage() {
@@ -24,11 +32,12 @@ export default function SwipePage() {
   const navigate = useNavigate();
   const mode = state?.mode ?? 'remove';
   const playlistId = state?.playlistId ?? '';
+  const demo = state?.demo ?? false;
 
   const [queue, setQueue] = useState<Song[]>([]);
   const [kept, setKept] = useState<Song[]>([]);
   const [discarded, setDiscarded] = useState<Song[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!demo);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -37,30 +46,37 @@ export default function SwipePage() {
   const saveTriggered = useRef(false);
 
   useEffect(() => {
+    if (demo) {
+      setQueue([...STUB_SONGS].reverse());
+      return;
+    }
     if (!playlistId) return;
     fetchPlaylistTracks(playlistId)
-      .then((songs) => {
+      .then(songs => {
         // Reverse so queue[last] is the first song shown.
         setQueue([...songs].reverse());
       })
       .catch(() => setError('Failed to load tracks.'))
       .finally(() => setLoading(false));
-  }, [playlistId]);
+  }, [playlistId, demo]);
 
   /**
-   * Once all cards are swiped, apply changes to the playlist.
+   * Once the queue is empty, apply changes to the playlist.
    * Remove mode: delete discarded songs from the playlist.
+   * Skipped in demo mode. Triggered by exhausting the queue or pressing Done.
    */
   useEffect(() => {
     if (loading || error || queue.length > 0 || saveTriggered.current) return;
     saveTriggered.current = true;
 
-    if (mode !== 'remove' || discarded.length === 0) return;
+    if (demo || mode !== 'remove' || discarded.length === 0) return;
 
     setSaving(true);
     removeTracksFromPlaylist(playlistId, discarded)
       .catch(() =>
-        setSaveError('Could not remove songs from Apple Music. Changes were not saved.')
+        setSaveError(
+          'Could not remove songs from Apple Music. Changes were not saved.'
+        )
       )
       .finally(() => setSaving(false));
   }, [queue.length, loading, error]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -94,11 +110,16 @@ export default function SwipePage() {
   function handleSwipe(direction: SwipeDirection) {
     if (!currentSong) return;
     if (direction === 'keep') {
-      setKept((prev) => [...prev, currentSong]);
+      setKept(prev => [...prev, currentSong]);
     } else {
-      setDiscarded((prev) => [...prev, currentSong]);
+      setDiscarded(prev => [...prev, currentSong]);
     }
-    setQueue((prev) => prev.slice(0, -1));
+    setQueue(prev => prev.slice(0, -1));
+  }
+
+  /** Commits the current selections and triggers the save flow. */
+  function handleDone() {
+    setQueue([]);
   }
 
   return (
@@ -108,14 +129,29 @@ export default function SwipePage() {
           className="text-sm text-gray-500 hover:text-black transition-colors"
           onClick={() => navigate(-1)}
         >
-          Back
+          Cancel
         </button>
-        <span className="text-sm text-gray-400 capitalize">{mode} mode</span>
+        {currentSong && (
+          <span className="text-sm text-gray-400">{queue.length} left</span>
+        )}
+        {currentSong && (
+          <button
+            className="text-sm font-medium hover:text-gray-600 transition-colors"
+            onClick={handleDone}
+          >
+            Done
+          </button>
+        )}
+        {!currentSong && <span />}
       </div>
 
       <AnimatePresence>
         {currentSong ? (
-          <SwipeCard key={currentSong.id} song={currentSong} onSwipe={handleSwipe} />
+          <SwipeCard
+            key={currentSong.id}
+            song={currentSong}
+            onSwipe={handleSwipe}
+          />
         ) : (
           <DoneState
             actionLabel={actionLabel}
@@ -162,7 +198,9 @@ function DoneState({
         {actionLabel} {keptCount} &middot; Skipped {discardedCount}
       </p>
       {saving && <p className="text-gray-400 text-sm">Saving changes...</p>}
-      {saveError && <p className="text-red-500 text-sm max-w-xs">{saveError}</p>}
+      {saveError && (
+        <p className="text-red-500 text-sm max-w-xs">{saveError}</p>
+      )}
       <button
         className="mt-4 px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
         onClick={onRestart}

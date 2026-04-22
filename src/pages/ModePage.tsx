@@ -1,5 +1,5 @@
 /**
- * ModePage — lets the user choose between adding or removing songs.
+ * ModePage - lets the user choose between adding or removing songs.
  * The selected mode is passed as router state to the swipe screen.
  */
 import { useNavigate, useLocation } from 'react-router';
@@ -7,6 +7,7 @@ import type { SwipeMode } from '../types';
 
 type LocationState = {
   playlistId: string;
+  demo?: boolean;
 };
 
 export default function ModePage() {
@@ -14,7 +15,7 @@ export default function ModePage() {
   const { state } = useLocation() as { state: LocationState };
 
   function selectMode(mode: SwipeMode) {
-    navigate('/swipe', { state: { mode, playlistId: state?.playlistId } });
+    navigate('/swipe', { state: { mode, playlistId: state?.playlistId, demo: state?.demo } });
   }
 
   return (

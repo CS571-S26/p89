@@ -1,5 +1,5 @@
 /**
- * musicKit — thin wrapper around MusicKit JS v3.
+ * musicKit - thin wrapper around MusicKit JS v3.
  *
  * Handles SDK initialization, user authorization, and library API requests.
  * All exported functions that call the API will automatically ensure MusicKit
@@ -26,20 +26,24 @@ function resolveArtworkUrl(
   size = 300
 ): string | undefined {
   if (!descriptor?.url) return undefined;
-  return descriptor.url.replace('{w}', String(size)).replace('{h}', String(size));
+  return descriptor.url
+    .replace('{w}', String(size))
+    .replace('{h}', String(size));
 }
 
 /** Resolves when the MusicKit JS SDK has finished loading on the page. */
 async function waitForMusicKit(): Promise<void> {
   if (window.MusicKit) return;
-  return new Promise((resolve) => {
-    document.addEventListener('musickitloaded', () => resolve(), { once: true });
+  return new Promise(resolve => {
+    document.addEventListener('musickitloaded', () => resolve(), {
+      once: true,
+    });
   });
 }
 
 /**
  * Configures MusicKit JS with the developer token.
- * Safe to call multiple times — only runs once and caches the result.
+ * Safe to call multiple times - only runs once and caches the result.
  * Call this at app startup to reduce latency on first sign-in.
  */
 export function configureMusicKit(): Promise<void> {
@@ -82,12 +86,13 @@ export async function fetchLibraryPlaylists(): Promise<Playlist[]> {
 
   while (path) {
     // eslint-disable-next-line no-await-in-loop
-    const envelope = (await music.api.music(path)).data as MusicKit.PagedResponse<PlaylistResource[]>;
+    const envelope = (await music.api.music(path))
+      .data as MusicKit.PagedResponse<PlaylistResource[]>;
     results.push(...envelope.data);
     path = envelope.next;
   }
 
-  return results.map((resource) => ({
+  return results.map(resource => ({
     id: resource.id,
     name: resource.attributes.name,
     songCount: 0,
@@ -103,16 +108,18 @@ export async function fetchPlaylistTracks(playlistId: string): Promise<Song[]> {
   await configureMusicKit();
   const music = getInstance();
   const results: SongResource[] = [];
-  let path: string | undefined = `/v1/me/library/playlists/${playlistId}/tracks?limit=100`;
+  let path: string | undefined =
+    `/v1/me/library/playlists/${playlistId}/tracks?limit=100`;
 
   while (path) {
     // eslint-disable-next-line no-await-in-loop
-    const envelope = (await music.api.music(path)).data as MusicKit.PagedResponse<SongResource[]>;
+    const envelope = (await music.api.music(path))
+      .data as MusicKit.PagedResponse<SongResource[]>;
     results.push(...envelope.data);
     path = envelope.next;
   }
 
-  return results.map((resource) => ({
+  return results.map(resource => ({
     id: resource.id,
     title: resource.attributes.name,
     artist: resource.attributes.artistName,
@@ -133,14 +140,17 @@ export async function removeTracksFromPlaylist(
   songs: Song[]
 ): Promise<void> {
   await configureMusicKit();
-  await getInstance().api.music(`/v1/me/library/playlists/${playlistId}/tracks`, {
-    fetchOptions: {
-      method: 'DELETE',
-      body: JSON.stringify({
-        data: songs.map((s) => ({ id: s.id, type: 'library-songs' })),
-      }),
-    },
-  });
+  await getInstance().api.music(
+    `/v1/me/library/playlists/${playlistId}/tracks`,
+    {
+      fetchOptions: {
+        method: 'DELETE',
+        body: JSON.stringify({
+          data: songs.map(s => ({ id: s.id, type: 'library-songs' })),
+        }),
+      },
+    }
+  );
 }
 
 /**
@@ -151,12 +161,15 @@ export async function addTracksToPlaylist(
   songs: Song[]
 ): Promise<void> {
   await configureMusicKit();
-  await getInstance().api.music(`/v1/me/library/playlists/${playlistId}/tracks`, {
-    fetchOptions: {
-      method: 'POST',
-      body: JSON.stringify({
-        data: songs.map((s) => ({ id: s.id, type: 'library-songs' })),
-      }),
-    },
-  });
+  await getInstance().api.music(
+    `/v1/me/library/playlists/${playlistId}/tracks`,
+    {
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          data: songs.map(s => ({ id: s.id, type: 'library-songs' })),
+        }),
+      },
+    }
+  );
 }
