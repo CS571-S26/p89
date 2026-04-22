@@ -17,7 +17,7 @@ import {
   fetchSongSuggestions,
   addTracksToPlaylist,
 } from '../services/musicKit';
-import { STUB_SONGS } from '../services/stubs';
+import { STUB_SONGS_BY_PLAYLIST } from '../services/stubs';
 
 type LocationState = {
   playlistId: string;
@@ -43,7 +43,8 @@ export default function SwipePage() {
 
   useEffect(() => {
     if (demo) {
-      setQueue([...STUB_SONGS].reverse());
+      const songs = STUB_SONGS_BY_PLAYLIST[playlistId] ?? [];
+      setQueue([...songs].reverse());
       return;
     }
     if (!playlistId) return;

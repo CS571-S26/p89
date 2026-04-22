@@ -72,8 +72,6 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
 
-    audio.play().catch(() => {});
-
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
