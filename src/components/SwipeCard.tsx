@@ -1,11 +1,11 @@
 /**
- * SwipeCard - a draggable card that resolves to a keep or discard action.
+ * SwipeCard - a draggable card that resolves to an add or skip action.
  *
  * Drag right past SWIPE_THRESHOLD (or flick faster than VELOCITY_THRESHOLD)
- * to keep; left to discard. Colored overlays provide directional feedback
- * during the drag. On commit the card tosses a short distance in the swipe
- * direction while fading out, disappearing before reaching the viewport edge.
- * On a sub-threshold release it springs back to center.
+ * to add the song; left to skip it. Colored overlays provide directional
+ * feedback during the drag. On commit the card tosses a short distance in the
+ * swipe direction while fading out, disappearing before reaching the viewport
+ * edge. On a sub-threshold release it springs back to center.
  */
 import {
   motion,
@@ -44,25 +44,25 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
   /** Rotation tracks x so the card tilts as it's dragged. */
   const rotate = useTransform(x, [-300, 300], [-20, 20]);
 
-  const keepOverlayOpacity = useTransform(
+  const addOverlayOpacity = useTransform(
     x,
     [0, SWIPE_THRESHOLD],
     [0, MAX_OVERLAY_OPACITY]
   );
-  const discardOverlayOpacity = useTransform(
+  const skipOverlayOpacity = useTransform(
     x,
     [-SWIPE_THRESHOLD, 0],
     [MAX_OVERLAY_OPACITY, 0]
   );
-  const keepSymbolOpacity = useTransform(x, [0, SWIPE_THRESHOLD], [0, 1]);
-  const discardSymbolOpacity = useTransform(x, [-SWIPE_THRESHOLD, 0], [1, 0]);
+  const addSymbolOpacity = useTransform(x, [0, SWIPE_THRESHOLD], [0, 1]);
+  const skipSymbolOpacity = useTransform(x, [-SWIPE_THRESHOLD, 0], [1, 0]);
 
   /**
    * Tosses the card a short distance in the swipe direction while fading it
    * out, so it disappears before reaching the viewport edge.
    */
   function exitCard(direction: SwipeDirection) {
-    const sign = direction === 'keep' ? 1 : -1;
+    const sign = direction === 'add' ? 1 : -1;
     const targetX = x.get() + sign * EXIT_TRAVEL;
     animate(opacity, 0, { duration: 0.2, ease: 'easeOut' }).then(() =>
       onSwipe(direction)
@@ -79,11 +79,11 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
     if (pastThreshold || fastFlick) {
       const direction: SwipeDirection = fastFlick
         ? vx > 0
-          ? 'keep'
-          : 'discard'
+          ? 'add'
+          : 'skip'
         : currentX > 0
-          ? 'keep'
-          : 'discard';
+          ? 'add'
+          : 'skip';
       exitCard(direction);
     } else {
       animate(x, 0, {
@@ -137,10 +137,10 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
             </div>
           )}
 
-          {/* Keep overlay */}
+          {/* Add overlay */}
           <motion.div
             className="absolute inset-0 bg-green-500 flex items-center justify-center pointer-events-none"
-            style={{ opacity: keepOverlayOpacity }}
+            style={{ opacity: addOverlayOpacity }}
           >
             <motion.svg
               viewBox="0 0 24 24"
@@ -150,16 +150,16 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ opacity: keepSymbolOpacity }}
+              style={{ opacity: addSymbolOpacity }}
             >
               <path d="M5 13l4 4L19 7" />
             </motion.svg>
           </motion.div>
 
-          {/* Discard overlay */}
+          {/* Skip overlay */}
           <motion.div
             className="absolute inset-0 bg-red-500 flex items-center justify-center pointer-events-none"
-            style={{ opacity: discardOverlayOpacity }}
+            style={{ opacity: skipOverlayOpacity }}
           >
             <motion.svg
               viewBox="0 0 24 24"
@@ -169,7 +169,7 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ opacity: discardSymbolOpacity }}
+              style={{ opacity: skipSymbolOpacity }}
             >
               <path d="M6 18L18 6M6 6l12 12" />
             </motion.svg>

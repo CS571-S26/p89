@@ -24,4 +24,4 @@ export type Playlist = {
 };
 
 /** Direction of a completed swipe gesture. */
-export type SwipeDirection = 'keep' | 'discard';
+export type SwipeDirection = 'add' | 'skip';

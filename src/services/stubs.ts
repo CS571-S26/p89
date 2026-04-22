@@ -9,7 +9,7 @@ export const STUB_PLAYLISTS: Playlist[] = [
   { id: 'stub-3', name: 'Road Trip', songCount: 5 },
 ];
 
-/** Candidate songs shown in demo add mode. */
+/** Candidate songs shown in demo mode. */
 export const STUB_SONGS: Song[] = [
   { id: 'stub-s1', title: 'As It Was', artist: 'Harry Styles', album: "Harry's House", duration: 167 },
   { id: 'stub-s2', title: 'Anti-Hero', artist: 'Taylor Swift', album: 'Midnights', duration: 201 },

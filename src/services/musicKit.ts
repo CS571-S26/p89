@@ -16,6 +16,9 @@ type CatalogSongResource = MusicKit.Resource<MusicKit.CatalogSongAttributes>;
 /** Cached promise so configure is only attempted once. */
 let configurePromise: Promise<void> | null = null;
 
+/** User token stored after a successful authorization. */
+let userToken: string | null = null;
+
 /** Resolves to the singleton MusicKit instance after configuration. */
 function getInstance(): MusicKit.MusicKitInstance {
   return window.MusicKit.getInstance();
@@ -70,11 +73,36 @@ export async function isAuthorized(): Promise<boolean> {
 
 /**
  * Prompts the user to sign in with Apple Music.
+ * Stores the user token for use in authenticated write requests.
  * Returns the user token string on success.
  */
 export async function authorize(): Promise<string> {
   await configureMusicKit();
-  return getInstance().authorize();
+  userToken = await getInstance().authorize();
+  return userToken;
+}
+
+/**
+ * Makes an authenticated POST request to the Apple Music API.
+ * Uses the cached developer token and user token as auth headers.
+ */
+async function authenticatedPost(path: string, body: unknown): Promise<Response> {
+  const devToken = import.meta.env.VITE_APPLE_DEV_TOKEN as string;
+  const token = userToken ?? getInstance().musicUserToken;
+  const url = `https://api.music.apple.com${path}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${devToken}`,
+      'Music-User-Token': token,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`Apple Music API error: ${response.status}`);
+  }
+  return response;
 }
 
 /** Signs the current user out of Apple Music. */
@@ -221,6 +249,25 @@ export async function fetchSongSuggestions(): Promise<Song[]> {
 }
 
 /**
+ * Creates a new empty playlist in the user's Apple Music library.
+ * Returns the created playlist.
+ */
+export async function createPlaylist(name: string): Promise<Playlist> {
+  await configureMusicKit();
+  const response = await authenticatedPost('/v1/me/library/playlists', {
+    attributes: { name },
+  });
+  const envelope = (await response.json()) as MusicKit.PagedResponse<PlaylistResource[]>;
+  const resource = envelope.data[0];
+  return {
+    id: resource.id,
+    name: resource.attributes.name,
+    songCount: 0,
+    artworkUrl: resolveArtworkUrl(resource.attributes.artwork),
+  };
+}
+
+/**
  * Adds catalog songs to a library playlist.
  * Songs sourced from Apple Music suggestions use the catalog 'songs' type.
  */
@@ -229,15 +276,7 @@ export async function addTracksToPlaylist(
   songs: Song[]
 ): Promise<void> {
   await configureMusicKit();
-  await getInstance().api.music(
-    `/v1/me/library/playlists/${playlistId}/tracks`,
-    {
-      fetchOptions: {
-        method: 'POST',
-        body: JSON.stringify({
-          data: songs.map(s => ({ id: s.id, type: 'songs' })),
-        }),
-      },
-    }
-  );
+  await authenticatedPost(`/v1/me/library/playlists/${playlistId}/tracks`, {
+    data: songs.map(s => ({ id: s.id, type: 'songs' })),
+  });
 }

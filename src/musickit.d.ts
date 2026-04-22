@@ -79,6 +79,8 @@ declare namespace MusicKit {
 
   interface MusicKitInstance {
     isAuthorized: boolean;
+    /** The cached user token, available after authorization. */
+    musicUserToken: string;
     authorize(): Promise<string>;
     unauthorize(): Promise<void>;
     api: MusicKitApi;

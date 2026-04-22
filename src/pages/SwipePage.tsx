@@ -99,7 +99,7 @@ export default function SwipePage() {
 
   function handleSwipe(direction: SwipeDirection) {
     if (!currentSong) return;
-    if (direction === 'keep') {
+    if (direction === 'add') {
       setKept(prev => [...prev, currentSong]);
     } else {
       setDiscarded(prev => [...prev, currentSong]);
