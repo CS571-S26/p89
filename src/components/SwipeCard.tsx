@@ -6,7 +6,12 @@
  * feedback during the drag. On commit the card tosses a short distance in the
  * swipe direction while fading out, disappearing before reaching the viewport
  * edge. On a sub-threshold release it springs back to center.
+ *
+ * When a previewUrl is present the card auto-plays the clip and renders a
+ * mini player (scrub bar, play/pause, elapsed/total time) in the info panel.
+ * Pointer events on the player are stopped so they don't trigger the card drag.
  */
+import { useEffect, useRef, useState } from 'react';
 import {
   motion,
   useMotionValue,
@@ -36,10 +41,65 @@ type SwipeCardProps = {
   onSwipe: (direction: SwipeDirection) => void;
 };
 
+/** Formats a duration in seconds as M:SS. */
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const opacity = useMotionValue(1);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => setDuration(audio.duration);
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+
+    audio.play().catch(() => {});
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.pause();
+    };
+  }, []);
+
+  function togglePlay() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {});
+    }
+  }
+
+  function handleScrub(e: React.ChangeEvent<HTMLInputElement>) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const time = Number(e.target.value);
+    audio.currentTime = time;
+    setCurrentTime(time);
+  }
 
   /** Rotation tracks x so the card tilts as it's dragged. */
   const rotate = useTransform(x, [-300, 300], [-20, 20]);
@@ -101,9 +161,11 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
     }
   }
 
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <motion.div
-      className="relative flex items-center justify-center w-80 h-[28rem] select-none"
+      className="relative flex items-center justify-center w-80 h-[30rem] select-none"
       initial={{ scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
@@ -118,6 +180,10 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
       >
         {/* Artwork */}
         <div className="flex-1 bg-gray-100 flex items-center justify-center relative">
+          {song.previewUrl && (
+            <audio ref={audioRef} src={song.previewUrl} loop />
+          )}
+
           {song.artworkUrl ? (
             <img
               src={song.artworkUrl}
@@ -176,13 +242,65 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
           </motion.div>
         </div>
 
-        {/* Song info */}
-        <div className="px-5 py-4 flex flex-col gap-0.5 bg-white">
-          <span className="font-semibold text-gray-900 truncate">
-            {song.title}
-          </span>
-          <span className="text-sm text-gray-500 truncate">{song.artist}</span>
-          <span className="text-xs text-gray-400 truncate">{song.album}</span>
+        {/* Song info + player */}
+        <div className="px-5 pt-4 pb-4 flex flex-col gap-3 bg-white">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-semibold text-gray-900 truncate">
+              {song.title}
+            </span>
+            <span className="text-sm text-gray-500 truncate">{song.artist}</span>
+            <span className="text-xs text-gray-400 truncate">{song.album}</span>
+          </div>
+
+          {song.previewUrl && (
+            /* Stop pointer events from reaching the drag handler */
+            <div
+              className="flex flex-col gap-2"
+              onPointerDown={e => e.stopPropagation()}
+            >
+              {/* Scrub bar */}
+              <div className="relative h-1 rounded-full bg-gray-200">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-black"
+                  style={{ width: `${progressPercent}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 1}
+                  step={0.1}
+                  value={currentTime}
+                  onChange={handleScrub}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  aria-label="Seek"
+                />
+              </div>
+
+              {/* Controls row */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={togglePlay}
+                  aria-label={playing ? 'Pause' : 'Play'}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-black text-white"
+                >
+                  {playing ? (
+                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                      <rect x="6" y="5" width="4" height="14" rx="1" />
+                      <rect x="14" y="5" width="4" height="14" rx="1" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                      <path d="M8 5.14v14l11-7-11-7z" />
+                    </svg>
+                  )}
+                </button>
+
+                <span className="text-xs tabular-nums text-gray-400">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
