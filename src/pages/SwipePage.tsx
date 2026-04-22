@@ -1,9 +1,9 @@
 /**
  * SwipePage - the main interactive screen.
  *
- * Fetches songs from the user's library that are not already in the selected
- * playlist and presents them as swipeable cards. Swipe right to add a song,
- * left to skip it. Kept songs are added to the playlist when the session ends.
+ * Fetches personalized song suggestions from Apple Music and presents them as
+ * swipeable cards. Swipe right to add a song to the playlist, left to skip it.
+ * Kept songs are added to the playlist when the session ends.
  *
  * The header shows how many songs remain and provides a "Done" button to commit
  * early, and a "Cancel" button to exit without saving.
@@ -14,8 +14,7 @@ import { AnimatePresence } from 'framer-motion';
 import SwipeCard from '../components/SwipeCard';
 import type { Song, SwipeDirection } from '../types';
 import {
-  fetchPlaylistTracks,
-  fetchLibrarySongs,
+  fetchSongSuggestions,
   addTracksToPlaylist,
 } from '../services/musicKit';
 import { STUB_SONGS } from '../services/stubs';
@@ -49,13 +48,9 @@ export default function SwipePage() {
     }
     if (!playlistId) return;
 
-    Promise.all([fetchPlaylistTracks(playlistId), fetchLibrarySongs()])
-      .then(([existing, library]) => {
-        const existingIds = new Set(existing.map(s => s.id));
-        const candidates = library.filter(s => !existingIds.has(s.id));
-        setQueue([...candidates].reverse());
-      })
-      .catch(() => setError('Failed to load tracks.'))
+    fetchSongSuggestions()
+      .then(songs => setQueue([...songs].reverse()))
+      .catch(() => setError('Failed to load suggestions.'))
       .finally(() => setLoading(false));
   }, [playlistId, demo]);
 

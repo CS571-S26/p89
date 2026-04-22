@@ -11,6 +11,7 @@ import type { Playlist, Song } from '../types';
 
 type PlaylistResource = MusicKit.Resource<MusicKit.LibraryPlaylistAttributes>;
 type SongResource = MusicKit.Resource<MusicKit.LibrarySongAttributes>;
+type CatalogSongResource = MusicKit.Resource<MusicKit.CatalogSongAttributes>;
 
 /** Cached promise so configure is only attempted once. */
 let configurePromise: Promise<void> | null = null;
@@ -121,6 +122,19 @@ function mapSongResource(resource: SongResource): Song {
   };
 }
 
+/** Maps a catalog song resource to the app's Song type. */
+function mapCatalogSongResource(resource: CatalogSongResource): Song {
+  return {
+    id: resource.id,
+    title: resource.attributes.name,
+    artist: resource.attributes.artistName,
+    album: resource.attributes.albumName,
+    duration: Math.round(resource.attributes.durationInMillis / 1000),
+    artworkUrl: resolveArtworkUrl(resource.attributes.artwork),
+    previewUrl: resource.attributes.previews?.[0]?.url,
+  };
+}
+
 /** Paginates through a library song endpoint and returns all results. */
 async function fetchAllSongResources(
   music: MusicKit.MusicKitInstance,
@@ -153,21 +167,62 @@ export async function fetchPlaylistTracks(playlistId: string): Promise<Song[]> {
 }
 
 /**
- * Fetches all songs from the user's Apple Music library.
- * Paginates automatically until all songs are retrieved.
+ * Fetches personalized song suggestions using Apple Music recommendations.
+ *
+ * Fetches the user's storefront and personal recommendations in parallel, then
+ * collects tracks from the recommended albums concurrently. Up to 5 albums are
+ * sampled, taking 5 tracks each, giving roughly 25 candidate songs.
  */
-export async function fetchLibrarySongs(): Promise<Song[]> {
+export async function fetchSongSuggestions(): Promise<Song[]> {
   await configureMusicKit();
   const music = getInstance();
-  const resources = await fetchAllSongResources(
-    music,
-    '/v1/me/library/songs?limit=100'
+
+  const [storefrontRes, recsRes] = await Promise.all([
+    music.api.music('/v1/me/storefront').then(
+      r => r.data as MusicKit.PagedResponse<MusicKit.StorefrontResource[]>
+    ),
+    music.api.music('/v1/me/recommendations?limit=10').then(
+      r => r.data as MusicKit.PagedResponse<MusicKit.RecommendationResource[]>
+    ),
+  ]);
+
+  const storefront = storefrontRes.data[0]?.id ?? 'us';
+
+  // Collect unique album IDs from all recommendation contents
+  const albumIds = [
+    ...new Set(
+      recsRes.data
+        .flatMap(rec => rec.relationships.contents.data)
+        .filter(item => item.type === 'albums')
+        .map(item => item.id)
+    ),
+  ].slice(0, 5);
+
+  // Fetch tracks from each recommended album in parallel
+  const trackGroups = await Promise.all(
+    albumIds.map(albumId =>
+      music.api
+        .music(`/v1/catalog/${storefront}/albums/${albumId}/tracks?limit=5`)
+        .then(
+          r =>
+            (r.data as MusicKit.PagedResponse<CatalogSongResource[]>).data
+        )
+        .catch(() => [] as CatalogSongResource[])
+    )
   );
-  return resources.map(mapSongResource);
+
+  // Flatten and deduplicate by ID
+  const seen = new Set<string>();
+  return trackGroups.flat().filter(track => {
+    if (seen.has(track.id)) return false;
+    seen.add(track.id);
+    return true;
+  }).map(mapCatalogSongResource);
 }
 
 /**
- * Adds tracks to a library playlist.
+ * Adds catalog songs to a library playlist.
+ * Songs sourced from Apple Music suggestions use the catalog 'songs' type.
  */
 export async function addTracksToPlaylist(
   playlistId: string,
@@ -180,7 +235,7 @@ export async function addTracksToPlaylist(
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({
-          data: songs.map(s => ({ id: s.id, type: 'library-songs' })),
+          data: songs.map(s => ({ id: s.id, type: 'songs' })),
         }),
       },
     }

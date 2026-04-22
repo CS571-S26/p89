@@ -30,6 +30,33 @@ declare namespace MusicKit {
     previews?: Array<{ url: string }>;
   }
 
+  /** Attributes for a song resource from the Apple Music catalog. */
+  interface CatalogSongAttributes {
+    name: string;
+    artistName: string;
+    albumName: string;
+    durationInMillis: number;
+    artwork?: ArtworkDescriptor;
+    previews?: Array<{ url: string }>;
+  }
+
+  /** A storefront resource representing the user's region. */
+  interface StorefrontResource {
+    id: string;
+    type: string;
+  }
+
+  /** A personal recommendation resource returned by /v1/me/recommendations. */
+  interface RecommendationResource {
+    id: string;
+    type: string;
+    relationships: {
+      contents: {
+        data: Array<{ id: string; type: string }>;
+      };
+    };
+  }
+
   interface Resource<Attributes> {
     id: string;
     type: string;
