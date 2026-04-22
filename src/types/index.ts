@@ -23,8 +23,5 @@ export type Playlist = {
   artworkUrl?: string;
 };
 
-/** Whether the user is adding songs to or removing songs from a playlist. */
-export type SwipeMode = 'add' | 'remove';
-
 /** Direction of a completed swipe gesture. */
 export type SwipeDirection = 'keep' | 'discard';

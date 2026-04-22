@@ -167,29 +167,6 @@ export async function fetchLibrarySongs(): Promise<Song[]> {
 }
 
 /**
- * Removes tracks from a library playlist.
- * Note: track removal is not officially documented in the Apple Music API
- * and may not be supported on all accounts.
- */
-export async function removeTracksFromPlaylist(
-  playlistId: string,
-  songs: Song[]
-): Promise<void> {
-  await configureMusicKit();
-  await getInstance().api.music(
-    `/v1/me/library/playlists/${playlistId}/tracks`,
-    {
-      fetchOptions: {
-        method: 'DELETE',
-        body: JSON.stringify({
-          data: songs.map(s => ({ id: s.id, type: 'library-songs' })),
-        }),
-      },
-    }
-  );
-}
-
-/**
  * Adds tracks to a library playlist.
  */
 export async function addTracksToPlaylist(

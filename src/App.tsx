@@ -4,7 +4,6 @@
  * Routes:
  *   /          - Login
  *   /playlists - Playlist selection
- *   /mode      - Add or remove mode selection
  *   /swipe     - Interactive swipe screen
  *   /about     - About page
  */
@@ -13,7 +12,6 @@ import './App.css';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import PlaylistPage from './pages/PlaylistPage';
-import ModePage from './pages/ModePage';
 import SwipePage from './pages/SwipePage';
 import AboutPage from './pages/AboutPage';
 
@@ -24,7 +22,6 @@ const router = createBrowserRouter(
       children: [
         { path: '/', element: <LoginPage /> },
         { path: '/playlists', element: <PlaylistPage /> },
-        { path: '/mode', element: <ModePage /> },
         { path: '/swipe', element: <SwipePage /> },
         { path: '/about', element: <AboutPage /> },
       ],

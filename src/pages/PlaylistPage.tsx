@@ -33,7 +33,7 @@ export default function PlaylistPage() {
   }, [demo]);
 
   function selectPlaylist(playlist: Playlist) {
-    navigate('/mode', { state: { playlistId: playlist.id, demo } });
+    navigate('/swipe', { state: { playlistId: playlist.id, demo } });
   }
 
   return (

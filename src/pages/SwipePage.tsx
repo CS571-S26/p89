@@ -1,30 +1,26 @@
 /**
  * SwipePage - the main interactive screen.
  *
- * Fetches tracks for the selected playlist and renders a stack of SwipeCards.
- * Swipe right to keep a song, left to discard it.
+ * Fetches songs from the user's library that are not already in the selected
+ * playlist and presents them as swipeable cards. Swipe right to add a song,
+ * left to skip it. Kept songs are added to the playlist when the session ends.
  *
  * The header shows how many songs remain and provides a "Done" button to commit
- * changes early, and a "Cancel" button to exit without saving.
- *
- * In remove mode, discarded songs are deleted from the playlist once the
- * session ends (either by exhausting the queue or pressing Done).
+ * early, and a "Cancel" button to exit without saving.
  */
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, Navigate } from 'react-router';
 import { AnimatePresence } from 'framer-motion';
 import SwipeCard from '../components/SwipeCard';
-import type { Song, SwipeMode, SwipeDirection } from '../types';
+import type { Song, SwipeDirection } from '../types';
 import {
   fetchPlaylistTracks,
   fetchLibrarySongs,
-  removeTracksFromPlaylist,
   addTracksToPlaylist,
 } from '../services/musicKit';
-import { STUB_SONGS, STUB_CANDIDATE_SONGS } from '../services/stubs';
+import { STUB_SONGS } from '../services/stubs';
 
 type LocationState = {
-  mode: SwipeMode;
   playlistId: string;
   demo?: boolean;
 };
@@ -32,7 +28,6 @@ type LocationState = {
 export default function SwipePage() {
   const { state } = useLocation() as { state: LocationState | null };
   const navigate = useNavigate();
-  const mode = state?.mode ?? 'remove';
   const playlistId = state?.playlistId ?? '';
   const demo = state?.demo ?? false;
 
@@ -49,58 +44,37 @@ export default function SwipePage() {
 
   useEffect(() => {
     if (demo) {
-      const stubs = mode === 'add' ? STUB_CANDIDATE_SONGS : STUB_SONGS;
-      setQueue([...stubs].reverse());
+      setQueue([...STUB_SONGS].reverse());
       return;
     }
     if (!playlistId) return;
 
-    const load =
-      mode === 'add'
-        ? Promise.all([fetchPlaylistTracks(playlistId), fetchLibrarySongs()]).then(
-            ([existing, library]) => {
-              const existingIds = new Set(existing.map(s => s.id));
-              return library.filter(s => !existingIds.has(s.id));
-            }
-          )
-        : fetchPlaylistTracks(playlistId);
-
-    load
-      .then(songs => setQueue([...songs].reverse()))
+    Promise.all([fetchPlaylistTracks(playlistId), fetchLibrarySongs()])
+      .then(([existing, library]) => {
+        const existingIds = new Set(existing.map(s => s.id));
+        const candidates = library.filter(s => !existingIds.has(s.id));
+        setQueue([...candidates].reverse());
+      })
       .catch(() => setError('Failed to load tracks.'))
       .finally(() => setLoading(false));
-  }, [playlistId, mode, demo]);
+  }, [playlistId, demo]);
 
   /**
-   * Once the queue is empty, apply changes to the playlist.
-   * Remove mode: delete discarded songs. Add mode: add kept songs.
+   * Once the queue is empty, add kept songs to the playlist.
    * Skipped in demo mode. Triggered by exhausting the queue or pressing Done.
    */
   useEffect(() => {
     if (loading || error || queue.length > 0 || saveTriggered.current) return;
     saveTriggered.current = true;
 
-    if (demo) return;
+    if (demo || kept.length === 0) return;
 
-    if (mode === 'remove' && discarded.length > 0) {
-      setSaving(true);
-      removeTracksFromPlaylist(playlistId, discarded)
-        .catch(() =>
-          setSaveError(
-            'Could not remove songs from Apple Music. Changes were not saved.'
-          )
-        )
-        .finally(() => setSaving(false));
-    } else if (mode === 'add' && kept.length > 0) {
-      setSaving(true);
-      addTracksToPlaylist(playlistId, kept)
-        .catch(() =>
-          setSaveError(
-            'Could not add songs to Apple Music. Changes were not saved.'
-          )
-        )
-        .finally(() => setSaving(false));
-    }
+    setSaving(true);
+    addTracksToPlaylist(playlistId, kept)
+      .catch(() =>
+        setSaveError('Could not add songs to Apple Music. Changes were not saved.')
+      )
+      .finally(() => setSaving(false));
   }, [queue.length, loading, error]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!playlistId) {
@@ -127,7 +101,6 @@ export default function SwipePage() {
   }
 
   const currentSong = queue[queue.length - 1];
-  const actionLabel = mode === 'add' ? 'Added' : 'Kept';
 
   function handleSwipe(direction: SwipeDirection) {
     if (!currentSong) return;
@@ -139,7 +112,7 @@ export default function SwipePage() {
     setQueue(prev => prev.slice(0, -1));
   }
 
-  /** Commits the current selections and triggers the save flow. */
+  /** Commits current selections and triggers the save flow. */
   function handleDone() {
     setQueue([]);
   }
@@ -156,15 +129,16 @@ export default function SwipePage() {
         {currentSong && (
           <span className="text-sm text-gray-400">{queue.length} left</span>
         )}
-        {currentSong && (
+        {currentSong ? (
           <button
             className="text-sm font-medium hover:text-gray-600 transition-colors"
             onClick={handleDone}
           >
             Done
           </button>
+        ) : (
+          <span />
         )}
-        {!currentSong && <span />}
       </div>
 
       <AnimatePresence>
@@ -176,9 +150,8 @@ export default function SwipePage() {
           />
         ) : (
           <DoneState
-            actionLabel={actionLabel}
-            keptCount={kept.length}
-            discardedCount={discarded.length}
+            addedCount={kept.length}
+            skippedCount={discarded.length}
             saving={saving}
             saveError={saveError}
             onRestart={() => navigate('/playlists')}
@@ -189,7 +162,7 @@ export default function SwipePage() {
       {currentSong && (
         <div className="flex gap-8 text-sm text-gray-400">
           <span>Left: skip</span>
-          <span>Right: {mode === 'add' ? 'add' : 'keep'}</span>
+          <span>Right: add</span>
         </div>
       )}
     </div>
@@ -197,18 +170,16 @@ export default function SwipePage() {
 }
 
 type DoneStateProps = {
-  actionLabel: string;
-  keptCount: number;
-  discardedCount: number;
+  addedCount: number;
+  skippedCount: number;
   saving: boolean;
   saveError: string | null;
   onRestart: () => void;
 };
 
 function DoneState({
-  actionLabel,
-  keptCount,
-  discardedCount,
+  addedCount,
+  skippedCount,
   saving,
   saveError,
   onRestart,
@@ -217,7 +188,7 @@ function DoneState({
     <div className="flex flex-col items-center gap-4 text-center">
       <h2 className="text-2xl font-semibold">All done</h2>
       <p className="text-gray-500 text-sm">
-        {actionLabel} {keptCount} &middot; Skipped {discardedCount}
+        Added {addedCount} &middot; Skipped {skippedCount}
       </p>
       {saving && <p className="text-gray-400 text-sm">Saving changes...</p>}
       {saveError && (
