@@ -108,26 +108,9 @@ export async function fetchLibraryPlaylists(): Promise<Playlist[]> {
   }));
 }
 
-/**
- * Fetches all tracks from a library playlist.
- * Paginates automatically until all tracks are retrieved.
- */
-export async function fetchPlaylistTracks(playlistId: string): Promise<Song[]> {
-  await configureMusicKit();
-  const music = getInstance();
-  const results: SongResource[] = [];
-  let path: string | undefined =
-    `/v1/me/library/playlists/${playlistId}/tracks?limit=100`;
-
-  while (path) {
-    // eslint-disable-next-line no-await-in-loop
-    const envelope = (await music.api.music(path))
-      .data as MusicKit.PagedResponse<SongResource[]>;
-    results.push(...envelope.data);
-    path = envelope.next;
-  }
-
-  return results.map(resource => ({
+/** Maps a raw library song resource to the app's Song type. */
+function mapSongResource(resource: SongResource): Song {
+  return {
     id: resource.id,
     title: resource.attributes.name,
     artist: resource.attributes.artistName,
@@ -135,7 +118,52 @@ export async function fetchPlaylistTracks(playlistId: string): Promise<Song[]> {
     duration: Math.round(resource.attributes.durationInMillis / 1000),
     artworkUrl: resolveArtworkUrl(resource.attributes.artwork),
     previewUrl: resource.attributes.previews?.[0]?.url,
-  }));
+  };
+}
+
+/** Paginates through a library song endpoint and returns all results. */
+async function fetchAllSongResources(
+  music: MusicKit.MusicKitInstance,
+  startPath: string
+): Promise<SongResource[]> {
+  const results: SongResource[] = [];
+  let path: string | undefined = startPath;
+  while (path) {
+    // eslint-disable-next-line no-await-in-loop
+    const envelope = (await music.api.music(path))
+      .data as MusicKit.PagedResponse<SongResource[]>;
+    results.push(...envelope.data);
+    path = envelope.next;
+  }
+  return results;
+}
+
+/**
+ * Fetches all tracks from a library playlist.
+ * Paginates automatically until all tracks are retrieved.
+ */
+export async function fetchPlaylistTracks(playlistId: string): Promise<Song[]> {
+  await configureMusicKit();
+  const music = getInstance();
+  const resources = await fetchAllSongResources(
+    music,
+    `/v1/me/library/playlists/${playlistId}/tracks?limit=100`
+  );
+  return resources.map(mapSongResource);
+}
+
+/**
+ * Fetches all songs from the user's Apple Music library.
+ * Paginates automatically until all songs are retrieved.
+ */
+export async function fetchLibrarySongs(): Promise<Song[]> {
+  await configureMusicKit();
+  const music = getInstance();
+  const resources = await fetchAllSongResources(
+    music,
+    '/v1/me/library/songs?limit=100'
+  );
+  return resources.map(mapSongResource);
 }
 
 /**

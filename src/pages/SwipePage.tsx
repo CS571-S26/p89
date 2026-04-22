@@ -17,9 +17,11 @@ import SwipeCard from '../components/SwipeCard';
 import type { Song, SwipeMode, SwipeDirection } from '../types';
 import {
   fetchPlaylistTracks,
+  fetchLibrarySongs,
   removeTracksFromPlaylist,
+  addTracksToPlaylist,
 } from '../services/musicKit';
-import { STUB_SONGS } from '../services/stubs';
+import { STUB_SONGS, STUB_CANDIDATE_SONGS } from '../services/stubs';
 
 type LocationState = {
   mode: SwipeMode;
@@ -47,38 +49,58 @@ export default function SwipePage() {
 
   useEffect(() => {
     if (demo) {
-      setQueue([...STUB_SONGS].reverse());
+      const stubs = mode === 'add' ? STUB_CANDIDATE_SONGS : STUB_SONGS;
+      setQueue([...stubs].reverse());
       return;
     }
     if (!playlistId) return;
-    fetchPlaylistTracks(playlistId)
-      .then(songs => {
-        // Reverse so queue[last] is the first song shown.
-        setQueue([...songs].reverse());
-      })
+
+    const load =
+      mode === 'add'
+        ? Promise.all([fetchPlaylistTracks(playlistId), fetchLibrarySongs()]).then(
+            ([existing, library]) => {
+              const existingIds = new Set(existing.map(s => s.id));
+              return library.filter(s => !existingIds.has(s.id));
+            }
+          )
+        : fetchPlaylistTracks(playlistId);
+
+    load
+      .then(songs => setQueue([...songs].reverse()))
       .catch(() => setError('Failed to load tracks.'))
       .finally(() => setLoading(false));
-  }, [playlistId, demo]);
+  }, [playlistId, mode, demo]);
 
   /**
    * Once the queue is empty, apply changes to the playlist.
-   * Remove mode: delete discarded songs from the playlist.
+   * Remove mode: delete discarded songs. Add mode: add kept songs.
    * Skipped in demo mode. Triggered by exhausting the queue or pressing Done.
    */
   useEffect(() => {
     if (loading || error || queue.length > 0 || saveTriggered.current) return;
     saveTriggered.current = true;
 
-    if (demo || mode !== 'remove' || discarded.length === 0) return;
+    if (demo) return;
 
-    setSaving(true);
-    removeTracksFromPlaylist(playlistId, discarded)
-      .catch(() =>
-        setSaveError(
-          'Could not remove songs from Apple Music. Changes were not saved.'
+    if (mode === 'remove' && discarded.length > 0) {
+      setSaving(true);
+      removeTracksFromPlaylist(playlistId, discarded)
+        .catch(() =>
+          setSaveError(
+            'Could not remove songs from Apple Music. Changes were not saved.'
+          )
         )
-      )
-      .finally(() => setSaving(false));
+        .finally(() => setSaving(false));
+    } else if (mode === 'add' && kept.length > 0) {
+      setSaving(true);
+      addTracksToPlaylist(playlistId, kept)
+        .catch(() =>
+          setSaveError(
+            'Could not add songs to Apple Music. Changes were not saved.'
+          )
+        )
+        .finally(() => setSaving(false));
+    }
   }, [queue.length, loading, error]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!playlistId) {
