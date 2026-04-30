@@ -32,6 +32,8 @@ describe('SwipeCard', () => {
       artworkUrl: 'https://example.com/art.jpg',
     };
     render(<SwipeCard song={song} onSwipe={vi.fn()} />);
-    expect(screen.getByRole('img', { name: /artwork/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: /cover art/i })
+    ).toBeInTheDocument();
   });
 });

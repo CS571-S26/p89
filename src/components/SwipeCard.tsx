@@ -185,7 +185,7 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
           {song.artworkUrl ? (
             <img
               src={song.artworkUrl}
-              alt={`${song.album} artwork`}
+              alt={`${song.album} cover art`}
               className="w-full h-full object-cover"
               draggable={false}
             />
@@ -246,10 +246,10 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
             <span className="font-semibold text-gray-900 truncate">
               {song.title}
             </span>
-            <span className="text-sm text-gray-500 truncate">
+            <span className="text-sm text-gray-700 truncate">
               {song.artist}
             </span>
-            <span className="text-xs text-gray-400 truncate">{song.album}</span>
+            <span className="text-xs text-gray-600 truncate">{song.album}</span>
           </div>
 
           {song.previewUrl && (
@@ -303,7 +303,7 @@ export default function SwipeCard({ song, onSwipe }: SwipeCardProps) {
                   )}
                 </button>
 
-                <span className="text-xs tabular-nums text-gray-400">
+                <span className="text-xs tabular-nums text-gray-700">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
               </div>

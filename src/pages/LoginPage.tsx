@@ -6,6 +6,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { authorize, isAuthorized } from '../services/musicKit';
+import PageHeader from '../components/PageHeader';
+import StatusMessage from '../components/StatusMessage';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -38,15 +40,21 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 gap-6 min-h-[calc(100vh-57px)]">
-      <h1 className="text-4xl font-bold tracking-tight">Audify</h1>
-      <p className="text-gray-500 text-sm">
-        Manage your playlists, one swipe at a time.
-      </p>
+      <PageHeader
+        title="Audify"
+        subtitle="Manage your playlists, one swipe at a time."
+        centered
+      />
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && (
+        <StatusMessage tone="error" live="assertive">
+          {error}
+        </StatusMessage>
+      )}
 
       <div className="flex flex-col items-center gap-2">
         <button
+          type="button"
           className="px-6 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
           onClick={handleSignIn}
           disabled={loading}
@@ -58,14 +66,15 @@ export default function LoginPage() {
               : 'Sign in with Apple Music'}
         </button>
         {!authorized && (
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-700">
             Requires an active Apple Music subscription.
           </p>
         )}
       </div>
 
       <button
-        className="text-sm text-gray-400 hover:text-black transition-colors"
+        type="button"
+        className="text-sm font-medium text-gray-700 hover:text-black transition-colors"
         onClick={handleDemo}
       >
         Try a demo - no account needed

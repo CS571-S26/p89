@@ -14,7 +14,7 @@ export default function SongRow({ song }: SongRowProps) {
       {song.artworkUrl ? (
         <img
           src={song.artworkUrl}
-          alt={song.album}
+          alt={`${song.album} cover art`}
           className="w-10 h-10 rounded object-cover flex-shrink-0"
         />
       ) : (
@@ -22,7 +22,7 @@ export default function SongRow({ song }: SongRowProps) {
       )}
       <div className="min-w-0">
         <p className="text-sm font-medium truncate">{song.title}</p>
-        <p className="text-xs text-gray-400 truncate">{song.artist}</p>
+        <p className="text-xs text-gray-700 truncate">{song.artist}</p>
       </div>
     </div>
   );

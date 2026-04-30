@@ -9,16 +9,12 @@
  * early, and a "Cancel" button to exit without saving.
  */
 import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate, Navigate } from 'react-router';
-import { AnimatePresence } from 'framer-motion';
-import SwipeCard from '../components/SwipeCard';
-import DoneState from '../components/DoneState';
-import type { Song, SwipeDirection } from '../types';
-import {
-  fetchSongSuggestions,
-  addTracksToPlaylist,
-} from '../services/musicKit';
+import { useLocation, Navigate } from 'react-router';
+import type { Song } from '../types';
+import { fetchSongSuggestions } from '../services/musicKit';
 import { STUB_SONGS_BY_PLAYLIST } from '../services/stubs';
+import StatusMessage from '../components/StatusMessage';
+import SwipeSession from '../components/SwipeSession';
 
 type LocationState = {
   playlistId: string;
@@ -27,54 +23,26 @@ type LocationState = {
 
 export default function SwipePage() {
   const { state } = useLocation() as { state: LocationState | null };
-  const navigate = useNavigate();
   const playlistId = state?.playlistId ?? '';
   const demo = state?.demo ?? false;
 
-  const [queue, setQueue] = useState<Song[]>([]);
-  const [kept, setKept] = useState<Song[]>([]);
-  const [discarded, setDiscarded] = useState<Song[]>([]);
   const [loading, setLoading] = useState(!demo);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  /** Guards against double-save in React StrictMode. */
-  const saveTriggered = useRef(false);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const fetchedForPlaylist = useRef<string | null>(null);
+  const demoSongs = STUB_SONGS_BY_PLAYLIST[playlistId] ?? [];
 
   useEffect(() => {
-    if (demo) {
-      const songs = STUB_SONGS_BY_PLAYLIST[playlistId] ?? [];
-      setQueue([...songs].reverse());
-      return;
-    }
     if (!playlistId) return;
+    if (demo) return;
+    if (fetchedForPlaylist.current === playlistId) return;
 
+    fetchedForPlaylist.current = playlistId;
     fetchSongSuggestions()
-      .then(songs => setQueue([...songs].reverse()))
+      .then(setSongs)
       .catch(() => setError('Failed to load suggestions.'))
       .finally(() => setLoading(false));
   }, [playlistId, demo]);
-
-  /**
-   * Once the queue is empty, add kept songs to the playlist.
-   * Skipped in demo mode. Triggered by exhausting the queue or pressing Done.
-   */
-  useEffect(() => {
-    if (loading || error || queue.length > 0 || saveTriggered.current) return;
-    saveTriggered.current = true;
-
-    if (demo || kept.length === 0) return;
-
-    setSaving(true);
-    addTracksToPlaylist(playlistId, kept)
-      .catch(() =>
-        setSaveError(
-          'Could not add songs to Apple Music. Changes were not saved.'
-        )
-      )
-      .finally(() => setSaving(false));
-  }, [queue.length, loading, error]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!playlistId) {
     return <Navigate to="/playlists" replace />;
@@ -83,7 +51,7 @@ export default function SwipePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-57px)]">
-        <p className="text-gray-400 text-sm">Loading tracks...</p>
+        <StatusMessage>Loading tracks...</StatusMessage>
       </div>
     );
   }
@@ -91,85 +59,19 @@ export default function SwipePage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-57px)] gap-4">
-        <p className="text-red-500 text-sm">{error}</p>
-        <button className="text-sm underline" onClick={() => navigate(-1)}>
-          Go back
-        </button>
+        <StatusMessage tone="error" live="assertive">
+          {error}
+        </StatusMessage>
       </div>
     );
   }
 
-  const currentSong = queue[queue.length - 1];
-
-  function handleSwipe(direction: SwipeDirection) {
-    if (!currentSong) return;
-    if (direction === 'add') {
-      setKept(prev => [...prev, currentSong]);
-    } else {
-      setDiscarded(prev => [...prev, currentSong]);
-    }
-    setQueue(prev => prev.slice(0, -1));
-  }
-
-  /** Commits current selections and triggers the save flow. */
-  function handleDone() {
-    setQueue([]);
-  }
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-57px)] gap-8 px-4">
-      <div className="flex items-center justify-between w-full max-w-sm">
-        {currentSong ? (
-          <button
-            className="text-sm text-gray-500 hover:text-black transition-colors"
-            onClick={() => navigate(-1)}
-          >
-            Cancel
-          </button>
-        ) : (
-          <span />
-        )}
-        {currentSong && (
-          <span className="text-sm text-gray-400">{queue.length} left</span>
-        )}
-        {currentSong ? (
-          <button
-            className="text-sm font-medium hover:text-gray-600 transition-colors"
-            onClick={handleDone}
-          >
-            Done
-          </button>
-        ) : (
-          <span />
-        )}
-      </div>
-
-      <AnimatePresence>
-        {currentSong ? (
-          <SwipeCard
-            key={currentSong.id}
-            song={currentSong}
-            onSwipe={handleSwipe}
-          />
-        ) : (
-          <DoneState
-            kept={kept}
-            discarded={discarded}
-            saving={saving}
-            saveError={saveError}
-            demo={demo}
-            onRestart={() => demo ? navigate('/') : navigate('/playlists')}
-          />
-        )}
-      </AnimatePresence>
-
-      {currentSong && (
-        <div className="flex gap-8 text-sm text-gray-400">
-          <span>Left: skip</span>
-          <span>Right: add</span>
-        </div>
-      )}
-    </div>
+    <SwipeSession
+      key={`${playlistId}-${demo ? 'demo' : 'live'}`}
+      songs={demo ? demoSongs : songs}
+      playlistId={playlistId}
+      demo={demo}
+    />
   );
 }
-

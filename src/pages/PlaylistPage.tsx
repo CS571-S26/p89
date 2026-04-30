@@ -8,6 +8,9 @@ import { useNavigate, useLocation } from 'react-router';
 import type { Playlist } from '../types';
 import { fetchLibraryPlaylists, createPlaylist } from '../services/musicKit';
 import { STUB_PLAYLISTS } from '../services/stubs';
+import PageHeader from '../components/PageHeader';
+import SectionCard from '../components/SectionCard';
+import StatusMessage from '../components/StatusMessage';
 
 type LocationState = {
   demo?: boolean;
@@ -18,7 +21,7 @@ export default function PlaylistPage() {
   const { state } = useLocation() as { state: LocationState | null };
   const demo = state?.demo ?? false;
 
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [remotePlaylists, setRemotePlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(!demo);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,12 +32,10 @@ export default function PlaylistPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (demo) {
-      setPlaylists(STUB_PLAYLISTS);
-      return;
-    }
+    if (demo) return;
+
     fetchLibraryPlaylists()
-      .then(setPlaylists)
+      .then(setRemotePlaylists)
       .catch(() => setError('Failed to load playlists.'))
       .finally(() => setLoading(false));
   }, [demo]);
@@ -74,63 +75,77 @@ export default function PlaylistPage() {
     setCreateError(null);
   }
 
+  const playlists = demo ? STUB_PLAYLISTS : remotePlaylists;
+
   return (
     <div className="flex flex-col items-center px-4 py-12 gap-8">
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold">Your Playlists</h2>
-        <p className="text-gray-500 text-sm mt-1">
-          Choose a playlist to add songs
-        </p>
-      </div>
+      <PageHeader
+        title="Your Playlists"
+        subtitle="Choose a playlist to add songs."
+        centered
+      />
 
-      {loading && <p className="text-gray-400 text-sm">Loading playlists...</p>}
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {loading && <StatusMessage>Loading playlists...</StatusMessage>}
+      {error && (
+        <StatusMessage tone="error" live="assertive">
+          {error}
+        </StatusMessage>
+      )}
 
       {!loading && !error && playlists.length === 0 && (
-        <p className="text-gray-400 text-sm">
+        <StatusMessage>
           No playlists found in your library.
-        </p>
+        </StatusMessage>
       )}
 
       <div className="w-full max-w-sm flex flex-col gap-3">
         {showForm ? (
-          <form
-            onSubmit={handleCreate}
-            className="flex flex-col gap-2 px-4 py-4 border border-black rounded-2xl"
-          >
-            <input
-              ref={inputRef}
-              type="text"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              placeholder="Playlist name"
-              className="text-sm outline-none bg-transparent placeholder-gray-400"
-              disabled={creating}
-            />
-            {createError && (
-              <p className="text-red-500 text-xs">{createError}</p>
-            )}
-            <div className="flex gap-3 mt-1">
-              <button
-                type="submit"
-                className="text-sm font-medium disabled:opacity-50"
-                disabled={creating || !newName.trim()}
+          <SectionCard className="border-black">
+            <form onSubmit={handleCreate} className="flex flex-col gap-2">
+              <label
+                htmlFor="playlist-name"
+                className="text-sm font-medium text-gray-900"
               >
-                {creating ? 'Creating...' : 'Create'}
-              </button>
-              <button
-                type="button"
-                className="text-sm text-gray-400 hover:text-black transition-colors"
-                onClick={handleCancelForm}
+                Playlist name
+              </label>
+              <input
+                id="playlist-name"
+                ref={inputRef}
+                type="text"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                placeholder="Road trip favorites"
+                className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-500 focus:border-gray-950"
                 disabled={creating}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+              />
+              {createError && (
+                <StatusMessage tone="error" live="assertive" className="text-xs">
+                  {createError}
+                </StatusMessage>
+              )}
+              <div className="flex gap-3 mt-1">
+                <button
+                  type="submit"
+                  className="rounded-full bg-gray-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+                  disabled={creating || !newName.trim()}
+                >
+                  {creating ? 'Creating...' : 'Create'}
+                </button>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-gray-700 hover:text-black transition-colors"
+                  onClick={handleCancelForm}
+                  disabled={creating}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </SectionCard>
         ) : !demo ? (
           <button
-            className="w-full flex items-center gap-3 px-4 py-4 border border-dashed border-gray-300 rounded-2xl hover:border-black text-gray-500 hover:text-black transition-colors"
+            type="button"
+            className="w-full flex items-center gap-3 px-4 py-4 border border-dashed border-gray-300 rounded-2xl hover:border-black text-gray-700 hover:text-black transition-colors"
             onClick={() => setShowForm(true)}
           >
             <span className="text-lg leading-none">+</span>
@@ -140,14 +155,15 @@ export default function PlaylistPage() {
 
         {playlists.map(playlist => (
           <button
+            type="button"
             key={playlist.id}
-            className="w-full flex items-center gap-3 px-4 py-4 border border-gray-200 rounded-2xl hover:border-black transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-4 border border-gray-200 rounded-2xl hover:border-black transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-950"
             onClick={() => selectPlaylist(playlist)}
           >
             {playlist.artworkUrl && (
               <img
                 src={playlist.artworkUrl}
-                alt=""
+                alt={`${playlist.name} cover art`}
                 className="w-10 h-10 rounded-lg object-cover shrink-0"
               />
             )}

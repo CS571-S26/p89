@@ -22,7 +22,10 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="w-full border-b border-gray-200 px-6 py-4 flex items-center gap-8">
+    <nav
+      aria-label="Primary"
+      className="w-full border-b border-gray-200 px-6 py-4 flex items-center gap-8"
+    >
       <NavLink to="/" className="text-lg font-bold tracking-tight">
         Audify
       </NavLink>
@@ -30,7 +33,7 @@ export default function NavBar() {
         <NavLink
           to="/playlists"
           className={({ isActive }) =>
-            `text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-500 hover:text-black'}`
+            `text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-700 hover:text-black'}`
           }
         >
           Playlists
@@ -38,7 +41,7 @@ export default function NavBar() {
         <NavLink
           to="/about"
           className={({ isActive }) =>
-            `text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-500 hover:text-black'}`
+            `text-sm font-medium transition-colors ${isActive ? 'text-black' : 'text-gray-700 hover:text-black'}`
           }
         >
           About
@@ -46,7 +49,8 @@ export default function NavBar() {
       </div>
       {authorized && (
         <button
-          className="ml-auto text-sm text-gray-500 hover:text-black transition-colors"
+          type="button"
+          className="ml-auto text-sm text-gray-700 hover:text-black transition-colors"
           onClick={handleLogout}
         >
           Sign out

@@ -125,7 +125,6 @@ export async function fetchLibraryPlaylists(): Promise<Playlist[]> {
   let path: string | undefined = '/v1/me/library/playlists?limit=100';
 
   while (path) {
-    // eslint-disable-next-line no-await-in-loop
     const envelope = (await music.api.music(path))
       .data as MusicKit.PagedResponse<PlaylistResource[]>;
     results.push(...envelope.data);
@@ -174,7 +173,6 @@ async function fetchAllSongResources(
   const results: SongResource[] = [];
   let path: string | undefined = startPath;
   while (path) {
-    // eslint-disable-next-line no-await-in-loop
     const envelope = (await music.api.music(path))
       .data as MusicKit.PagedResponse<SongResource[]>;
     results.push(...envelope.data);
