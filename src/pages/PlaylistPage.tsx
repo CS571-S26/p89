@@ -6,7 +6,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import type { Playlist } from '../types';
-import { fetchLibraryPlaylists, createPlaylist } from '../services/musicKit';
+import {
+  createPlaylist,
+  fetchLibraryPlaylists,
+  getCurrentProvider,
+} from '../services/musicService';
 import { STUB_PLAYLISTS } from '../services/stubs';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
@@ -30,6 +34,8 @@ export default function PlaylistPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const providerName =
+    getCurrentProvider() === 'youtube' ? 'YouTube Music' : 'Apple Music';
 
   useEffect(() => {
     if (demo) return;
@@ -81,7 +87,7 @@ export default function PlaylistPage() {
     <div className="flex flex-col items-center px-4 py-12 gap-8">
       <PageHeader
         title="Your Playlists"
-        subtitle="Choose a playlist to add songs."
+        subtitle={`Choose a ${providerName} playlist to add songs.`}
         centered
       />
 

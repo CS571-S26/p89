@@ -14,9 +14,10 @@ vi.mock('react-router', async importOriginal => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-vi.mock('../services/musicKit', () => ({
+vi.mock('../services/musicService', () => ({
   authorize: vi.fn().mockResolvedValue('mock-user-token'),
   isAuthorized: vi.fn().mockResolvedValue(false),
+  setCurrentProvider: vi.fn(),
 }));
 
 describe('LoginPage', () => {
@@ -38,12 +39,14 @@ describe('LoginPage', () => {
         <LoginPage />
       </MemoryRouter>
     );
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.click(
+      screen.getByRole('button', { name: /sign in with apple music/i })
+    );
     expect(mockNavigate).toHaveBeenCalledWith('/playlists');
   });
 
   it('shows an error message when sign-in fails', async () => {
-    const { authorize } = await import('../services/musicKit');
+    const { authorize } = await import('../services/musicService');
     vi.mocked(authorize).mockRejectedValueOnce(new Error('auth failed'));
 
     const user = userEvent.setup();
@@ -52,7 +55,9 @@ describe('LoginPage', () => {
         <LoginPage />
       </MemoryRouter>
     );
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.click(
+      screen.getByRole('button', { name: /sign in with apple music/i })
+    );
     expect(screen.getByText(/sign in failed/i)).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
   });

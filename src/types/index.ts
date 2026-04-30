@@ -2,6 +2,8 @@
  * Core domain types for Audify.
  */
 
+export type MusicProvider = 'apple' | 'youtube';
+
 /** A single track in a playlist or search result. */
 export type Song = {
   id: string;

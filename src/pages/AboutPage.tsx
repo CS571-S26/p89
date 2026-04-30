@@ -11,9 +11,9 @@ export default function AboutPage() {
         title="About Audify"
         subtitle={
           <>
-            Audify helps you build playlists faster using your Apple Music
-            account. Pick a playlist, swipe through personalized song
-            suggestions, and add the ones you like in seconds.
+            Audify helps you build playlists faster with Apple Music or
+            YouTube Music. Pick a playlist, swipe through fresh suggestions,
+            and add the ones you like in seconds.
           </>
         }
         centered
@@ -22,8 +22,9 @@ export default function AboutPage() {
         <SectionCard>
           <h2 className="font-medium mb-1">Personalized suggestions</h2>
           <p className="text-sm text-gray-700">
-            Songs are pulled from Apple Music recommendations based on your
-            listening history, so what you see is tailored to your taste.
+            Apple Music uses your recommendation feed. YouTube Music uses
+            Google sign-in and YouTube playlist APIs to source music videos you
+            can add to playlists.
           </p>
         </SectionCard>
         <SectionCard>
@@ -34,11 +35,12 @@ export default function AboutPage() {
           </p>
         </SectionCard>
         <SectionCard>
-          <h2 className="font-medium mb-1">Requires Apple Music</h2>
+          <h2 className="font-medium mb-1">Provider requirements</h2>
           <p className="text-sm text-gray-700">
-            An active Apple Music subscription is needed to access your
-            playlists and suggestions. Use the demo on the login screen to try
-            the app without an account.
+            Apple Music features require an active Apple Music subscription.
+            YouTube Music features require Google sign-in with permission to
+            manage playlists. Use the demo on the login screen to try the app
+            without an account.
           </p>
         </SectionCard>
       </div>

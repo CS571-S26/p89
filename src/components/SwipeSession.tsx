@@ -2,7 +2,10 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence } from 'framer-motion';
 import type { Song, SwipeDirection } from '../types';
-import { addTracksToPlaylist } from '../services/musicKit';
+import {
+  addTracksToPlaylist,
+  getCurrentProvider,
+} from '../services/musicService';
 import DoneState from './DoneState';
 import StatusMessage from './StatusMessage';
 import SwipeCard from './SwipeCard';
@@ -26,6 +29,8 @@ export default function SwipeSession({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const saveTriggered = useRef(false);
+  const providerName =
+    getCurrentProvider() === 'youtube' ? 'YouTube Music' : 'Apple Music';
 
   const currentSong = queue[queue.length - 1];
 
@@ -65,7 +70,9 @@ export default function SwipeSession({
     try {
       await addTracksToPlaylist(playlistId, keptSongs);
     } catch {
-      setSaveError('Could not add songs to Apple Music. Changes were not saved.');
+      setSaveError(
+        `Could not add songs to ${providerName}. Changes were not saved.`
+      );
     } finally {
       setSaving(false);
     }

@@ -1,22 +1,28 @@
 /**
  * NavBar - primary navigation bar rendered on every page.
  * Contains the app brand, links to main sections, and a logout button
- * when the user is signed in to Apple Music.
+ * when the user is signed in to the active music provider.
  */
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
-import { isAuthorized, unauthorize } from '../services/musicKit';
+import {
+  getCurrentProvider,
+  isAuthorized,
+  unauthorizeCurrentProvider,
+} from '../services/musicService';
 
 export default function NavBar() {
   const navigate = useNavigate();
   const [authorized, setAuthorized] = useState(false);
+  const provider = getCurrentProvider();
+  const providerName = provider === 'youtube' ? 'YouTube Music' : 'Apple Music';
 
   useEffect(() => {
-    isAuthorized().then(setAuthorized).catch(() => {});
-  }, []);
+    isAuthorized(provider).then(setAuthorized).catch(() => {});
+  }, [provider]);
 
   async function handleLogout() {
-    await unauthorize();
+    await unauthorizeCurrentProvider();
     setAuthorized(false);
     navigate('/');
   }
@@ -48,9 +54,14 @@ export default function NavBar() {
         </NavLink>
       </div>
       {authorized && (
+        <span className="ml-auto text-xs font-medium uppercase tracking-[0.18em] text-gray-700">
+          {providerName}
+        </span>
+      )}
+      {authorized && (
         <button
           type="button"
-          className="ml-auto text-sm text-gray-700 hover:text-black transition-colors"
+          className="text-sm text-gray-700 hover:text-black transition-colors"
           onClick={handleLogout}
         >
           Sign out
